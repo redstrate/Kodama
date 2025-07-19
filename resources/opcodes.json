@@ -1,0 +1,71 @@
+{
+    "ServerZoneIpcType": [],
+    "ClientZoneIpcType": [],
+    "ServerLobbyIpcType": [
+        {
+            "name": "NackReply",
+            "opcode": 2,
+            "size": 536
+        },
+        {
+            "name": "LoginReply",
+            "opcode": 12,
+            "size": 656
+        },
+        {
+            "name": "ServiceLoginReply",
+            "opcode": 13,
+            "size": 944
+        },
+        {
+            "name": "CharaMakeReply",
+            "opcode": 14,
+            "size": 1593
+        },
+        {
+            "name": "GameLoginReply",
+            "opcode": 15,
+            "size": 160
+        },
+        {
+            "name": "DistWorldInfo",
+            "opcode": 21,
+            "size": 496
+        },
+        {
+            "name": "DistRetainerInfo",
+            "opcode": 23,
+            "size": 536
+        }
+    ],
+    "ClientLobbyIpcType": [
+        {
+            "name": "ServiceLogin",
+            "opcode": 3,
+            "size": 16
+        },
+        {
+            "name": "GameLogin",
+            "opcode": 4,
+            "size": 32
+        },
+        {
+            "name": "LoginEx",
+            "opcode": 5,
+            "size": 112
+        },
+        {
+            "name": "CharaMake",
+            "opcode": 11,
+            "size": 496
+        }
+    ],
+    "ServerChatIpcType": [
+        {
+            "name": "LoginReply",
+            "opcode": 2,
+            "size": 8
+        }
+    ],
+    "ClientChatIpcType": []
+}

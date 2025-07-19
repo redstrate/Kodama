@@ -1,0 +1,94 @@
+[package]
+name = "kodama"
+description = "A server replacement for FFXIV 1.23b."
+authors = ["Joshua Goins <josh@redstrate.com>"]
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0"
+homepage = "https://xiv.zone/kodama"
+repository = "https://github.com/redstrate/Kodama"
+readme = "README.md"
+
+[[bin]]
+name = "kodama-login"
+
+[[bin]]
+name = "kodama-patch"
+
+[[bin]]
+name = "kodama-web"
+
+[[bin]]
+name = "kodama-lobby"
+
+[[bin]]
+name = "kodama-world"
+
+[profile.release]
+lto = true
+strip = true
+opt-level = "z"
+codegen-units = 1
+panic = "abort"
+
+[build-dependencies]
+# Serialization of IPC opcodes
+serde = { version = "1.0", features = ["derive"], default-features = false }
+serde_json = { version = "1.0", features = ["std"], default-features = false }
+
+[dependencies]
+# Serialization used in almost every server
+serde = { version = "1.0", features = ["derive"], default-features = false }
+serde_json = { version = "1.0", features = ["std"], default-features = false }
+serde_yaml_ng = { version = "0.10", default-features = false }
+serde-xml-rs = { version = "0.8", default-features = false }
+
+# Logging
+tracing = { version = "0.1", default-features = false }
+
+# Serialization of packets
+binrw = { version = "0.15", features = ["std"], default-features = false }
+
+# Used in encryption of packets
+md5 = { version = "0.8", default-features = false }
+
+# Used to access game data
+physis = { git = "https://github.com/redstrate/physis", default-features = false }
+
+# needed for c-style bitflags
+bitflags = { version = "2.9", default-features = false }
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+# Used for the web servers
+axum = { version = "0.8", features = ["json", "tokio", "http1", "form", "query", "multipart"], default-features = false }
+axum-extra = { version = "0.10", features = ["cookie"], default-features = false }
+
+# Async runtime
+tokio = { version = "1.46", features = ["macros", "rt", "rt-multi-thread", "io-util"], default-features = false }
+
+# Logging
+tracing-subscriber = { version = "0.3", features = ["fmt"], default-features = false }
+
+# Used currently for SID generation
+fastrand = { version = "2.3", features = ["std"], default-features = false }
+
+# HTML templates used in the web servers
+minijinja = { version = "2.11", features = ["serde", "loader", "multi_template"], default-features = false }
+
+# Used for data persistence
+rusqlite = { version = "0.37", features = ["bundled"], default-features = false }
+
+# For server-side scripting
+mlua = { version = "0.10", features = ["lua54", "vendored", "send", "async", "serialize"], default-features = false }
+
+# For some login<->lobby server communication
+reqwest = { version = "0.12", default-features = false }
+
+# For RCON
+rkon = { version = "0.1" }
+
+# For serving static files on the website
+tower-http = { version = "0.6", features = ["fs", "cors"] }
+
+# For obtaining SHA1 hashes of game components
+sha1_smol = { version = "1.0" }
