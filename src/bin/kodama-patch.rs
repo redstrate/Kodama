@@ -8,6 +8,7 @@ use axum::routing::post;
 use axum::{Router, routing::get};
 use kodama::config::get_config;
 use kodama::patch::Version;
+use kodama::patch::sha1::Sha1;
 use kodama::{SUPPORTED_BOOT_VERSION, SUPPORTED_GAME_VERSION};
 use physis::patchlist::{PatchEntry, PatchList, PatchListType};
 use reqwest::header::USER_AGENT;
@@ -64,14 +65,18 @@ fn list_patch_files(dir_path: &str) -> Vec<String> {
         .collect()
 }
 
+/// Strips the D version names
+fn get_raw_version(version: &str) -> String {
+    version.replace("D", "").to_string()
+}
+
 /// Check if it's a valid patch client connecting
 fn check_valid_patch_client(headers: &HeaderMap) -> bool {
     let Some(user_agent) = headers.get(USER_AGENT) else {
         return false;
     };
 
-    // FFXIV_Patch is used by sqexPatch.dll
-    user_agent == "FFXIV PATCH CLIENT" || user_agent == "FFXIV_Patch"
+    user_agent == "FFXIV PATCH CLIENT"
 }
 
 async fn verify_session(
@@ -84,6 +89,20 @@ async fn verify_session(
     }
 
     let config = get_config();
+
+    // TODO: these are all very useful and should be documented somewhere
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "Content-Location",
+        "ffxivpatch/2b5cbc63/vercheck.dat".parse().unwrap(),
+    );
+    headers.insert(
+        "X-Repository",
+        "ffxivneo/win32/release/boot".parse().unwrap(),
+    );
+    headers.insert("X-Patch-Module", "ZiPatch".parse().unwrap());
+    headers.insert("X-Protocol", "http".parse().unwrap());
+    headers.insert("X-Latest-Version", game_version.parse().unwrap());
 
     if config.enforce_validity_checks {
         tracing::info!("Verifying game components for {channel} {game_version} {body}...");
@@ -98,24 +117,72 @@ async fn verify_session(
             return StatusCode::INTERNAL_SERVER_ERROR.into_response();
         }
 
-        if game_version < SUPPORTED_GAME_VERSION {
-            tracing::warn!(
-                "{game_version} is below supported game version {SUPPORTED_GAME_VERSION}!"
-            );
-            return StatusCode::INTERNAL_SERVER_ERROR.into_response();
-        }
-
         // If we are up to date, yay!
         if game_version == SUPPORTED_GAME_VERSION {
-            let mut headers = HeaderMap::new();
             headers.insert("X-Patch-Unique-Id", sid.parse().unwrap());
 
             return (headers).into_response();
         }
-    }
 
-    let mut headers = HeaderMap::new();
-    headers.insert("X-Patch-Unique-Id", sid.parse().unwrap());
+        // check if we need any patching
+        let mut send_patches = Vec::new();
+        let patches = list_patch_files(&format!("{}/game", &config.patch.patches_location));
+
+        // TODO: just don't make it take a while!
+        tracing::info!(
+            "Calculating SHA1 hashes for patches. This is known to take a while, sorry!"
+        );
+
+        let mut patch_length = 0;
+        for patch in patches {
+            let patch_str: &str = &patch;
+            if game_version.partial_cmp(&Version(patch_str)).unwrap() == Ordering::Less {
+                let filename = format!(
+                    "{}/game/{}.patch",
+                    &config.patch.patches_location, patch_str
+                );
+                let file = std::fs::File::open(&filename).unwrap();
+                let metadata = file.metadata().unwrap();
+
+                let sha1 = Sha1::from(std::fs::read(&filename).unwrap())
+                    .digest()
+                    .to_string();
+
+                send_patches.push(PatchEntry {
+                    url: format!("http://{}/game/{}.patch", config.patch.patch_dl_url, patch)
+                        .to_string(),
+                    version: get_raw_version(patch_str),
+                    hash_block_size: metadata.len() as i64, // kind of inefficient, but whatever
+                    length: metadata.len() as i64,
+                    size_on_disk: metadata.len() as i64, // NOTE: wrong but it should be fine to lie
+                    hashes: vec![sha1],
+                    unknown_a: 19,
+                    unknown_b: 18,
+                });
+                patch_length += metadata.len();
+            }
+        }
+
+        if !send_patches.is_empty() {
+            headers.insert("X-Patch-Unique-Id", sid.parse().unwrap());
+            headers.insert(
+                "Content-Type",
+                "multipart/mixed; boundary=477D80B1_38BC_41d4_8B48_5273ADB89CAC"
+                    .parse()
+                    .unwrap(),
+            );
+
+            let patch_list = PatchList {
+                id: "477D80B1_38BC_41d4_8B48_5273ADB89CAC".to_string(),
+                requested_version: game_version.to_string().clone(),
+                content_location: format!("ffxivpatch/2b5cbc63/metainfo/{}.http", game_version.0), // FIXME: i think this is actually supposed to be the target version
+                patch_length,
+                patches: send_patches,
+            };
+            let patch_list_str = patch_list.to_string(PatchListType::Game);
+            return (headers, patch_list_str).into_response();
+        }
+    }
 
     (headers).into_response()
 }
@@ -148,8 +215,7 @@ async fn verify_boot(
     if config.enforce_validity_checks {
         tracing::info!("Verifying boot components for {channel} {boot_version}...");
 
-        let actual_boot_version = boot_version.split("?time").collect::<Vec<&str>>()[0];
-        let boot_version = Version(actual_boot_version);
+        let boot_version = Version(&boot_version);
 
         // If we are up to date, yay!
         if boot_version == SUPPORTED_BOOT_VERSION {
@@ -170,7 +236,7 @@ async fn verify_boot(
         let mut patch_length = 0;
         for patch in patches {
             let patch_str: &str = &patch;
-            if actual_boot_version.partial_cmp(patch_str).unwrap() == Ordering::Less {
+            if boot_version.partial_cmp(&Version(patch_str)).unwrap() == Ordering::Less {
                 let file = std::fs::File::open(&*format!(
                     "{}/boot/{}.patch",
                     &config.patch.patches_location, patch_str
@@ -181,7 +247,7 @@ async fn verify_boot(
                 send_patches.push(PatchEntry {
                     url: format!("http://{}/boot/{}.patch", config.patch.patch_dl_url, patch)
                         .to_string(),
-                    version: patch_str.to_string(),
+                    version: get_raw_version(patch_str),
                     hash_block_size: 0,
                     length: metadata.len() as i64,
                     size_on_disk: metadata.len() as i64, // NOTE: wrong but it should be fine to lie
@@ -209,7 +275,6 @@ async fn verify_boot(
                 patches: send_patches,
             };
             let patch_list_str = patch_list.to_string(PatchListType::Boot);
-            dbg!(&patch_list_str);
             return (headers, patch_list_str).into_response();
         }
     }
@@ -228,7 +293,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/http/{channel}/{game_version}/{sid}", post(verify_session))
-        .route("/http/{channel}/{boot_version}/", get(verify_boot))
+        .route("/http/{channel}/{boot_version}", get(verify_boot))
         .fallback(fallback);
 
     let config = get_config();

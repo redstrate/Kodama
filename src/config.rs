@@ -89,10 +89,13 @@ impl LoginConfig {
 /// Configuration for the patch server.
 #[derive(Serialize, Deserialize)]
 pub struct PatchConfig {
+    #[serde(default = "PatchConfig::default_port")]
     pub port: u16,
+    #[serde(default = "PatchConfig::default_listen_address")]
     pub listen_address: String,
     /// Publicly accessible URL to download patches from.
     /// For example, "patch-dl.ffxiv.localhost". Patch files must be served so they're accessible as: "http://patch-dl.ffxiv.localhost/game/ex4/somepatchfilename.patch"
+    #[serde(default = "PatchConfig::default_patch_dl_url")]
     pub patch_dl_url: String,
     /// Location of the patches directory on disk. Must be setup like so:
     /// ```ignore
@@ -101,25 +104,52 @@ pub struct PatchConfig {
     ///     ex1/
     /// ...
     /// ```
+    #[serde(default = "PatchConfig::default_patches_location")]
     pub patches_location: String,
+    #[serde(default = "PatchConfig::default_game_server_name")]
     pub game_server_name: String,
+    #[serde(default = "PatchConfig::default_boot_server_name")]
     pub boot_server_name: String,
 }
 
 impl Default for PatchConfig {
     fn default() -> Self {
         Self {
-            port: 6900,
-            listen_address: "0.0.0.0".to_string(),
-            patch_dl_url: "patch-dl.ffxiv.localhost".to_string(),
-            patches_location: "patches".to_string(),
-            boot_server_name: "patch-bootver.ffxiv.localhost".to_string(),
-            game_server_name: "patch-gamever.ffxiv.localhost".to_string(),
+            port: Self::default_port(),
+            listen_address: Self::default_listen_address(),
+            patch_dl_url: Self::default_patch_dl_url(),
+            patches_location: Self::default_patches_location(),
+            boot_server_name: Self::default_boot_server_name(),
+            game_server_name: Self::default_game_server_name(),
         }
     }
 }
 
 impl PatchConfig {
+    pub fn default_port() -> u16 {
+        6900
+    }
+
+    pub fn default_listen_address() -> String {
+        "0.0.0.0".to_string()
+    }
+
+    pub fn default_patch_dl_url() -> String {
+        "patch-dl.ffxiv.localhost".to_string()
+    }
+
+    pub fn default_patches_location() -> String {
+        "patches".to_string()
+    }
+
+    pub fn default_game_server_name() -> String {
+        "patch-bootver.ffxiv.localhost".to_string()
+    }
+
+    pub fn default_boot_server_name() -> String {
+        "patch-gamever.ffxiv.localhost".to_string()
+    }
+
     /// Returns the configured IP address & port as a `SocketAddr`.
     pub fn get_socketaddr(&self) -> SocketAddr {
         SocketAddr::from((
