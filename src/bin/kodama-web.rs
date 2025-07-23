@@ -26,26 +26,8 @@ fn setup_default_environment() -> Environment<'static> {
     )
     .unwrap();
     env.add_template_owned(
-        "worldstatus.html",
-        std::fs::read_to_string("resources/templates/worldstatus.html")
-            .expect("Failed to find template!"),
-    )
-    .unwrap();
-    env.add_template_owned(
         "account.html",
         std::fs::read_to_string("resources/templates/account.html")
-            .expect("Failed to find template!"),
-    )
-    .unwrap();
-    env.add_template_owned(
-        "setup.html",
-        std::fs::read_to_string("resources/templates/setup.html")
-            .expect("Failed to find template!"),
-    )
-    .unwrap();
-    env.add_template_owned(
-        "launchertweaks.toml",
-        std::fs::read_to_string("resources/templates/launchertweaks.toml")
             .expect("Failed to find template!"),
     )
     .unwrap();
