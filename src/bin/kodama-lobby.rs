@@ -122,6 +122,10 @@ async fn main() {
                                     );
                                     connection.send_lobby_info(*sequence).await
                                 }
+                                ClientLobbyIpcData::CharaMake(chara_make) => {
+                                    dbg!(chara_make);
+                                    connection.handle_character_action(&chara_make).await;
+                                }
                                 _ => {}
                             },
                             _ => {}

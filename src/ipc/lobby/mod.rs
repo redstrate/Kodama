@@ -21,7 +21,7 @@ mod nack_reply;
 pub use nack_reply::NackReply;
 
 use crate::{
-    common::{read_string, write_string},
+    common::{CHAR_NAME_MAX_LENGTH, read_string, write_string},
     opcodes::{ClientLobbyIpcType, ServerLobbyIpcType},
     packet::{IPC_HEADER_SIZE, IpcSegment, ReadWriteIpcSegment},
 };
@@ -163,9 +163,19 @@ pub enum ServerLobbyIpcData {
         unk2: u8,
         #[brw(pad_after = 1)] // empty
         action: LobbyCharacterActionKind,
-        #[brw(pad_before = 36)] // empty
-        #[brw(pad_after = 1336)] // empty and garbage
-        details: CharacterDetails,
+        player_id: u64,
+        unk3: u32,
+        ticket: u32,
+        #[bw(pad_size_to = CHAR_NAME_MAX_LENGTH)]
+        #[br(count = CHAR_NAME_MAX_LENGTH)]
+        #[br(map = read_string)]
+        #[bw(map = write_string)]
+        character_name: String,
+        #[bw(pad_size_to = 32)]
+        #[br(count = 32)]
+        #[br(map = read_string)]
+        #[bw(map = write_string)]
+        server_name: String,
     },
     /// Sent by the server to tell the client how to connect to the world server.
     #[br(pre_assert(*magic == ServerLobbyIpcType::GameLoginReply))]
@@ -231,7 +241,11 @@ mod tests {
                     unk1: 0,
                     unk2: 0,
                     action: LobbyCharacterActionKind::ReserveName,
-                    details: CharacterDetails::default(),
+                    player_id: 0,
+                    unk3: 0,
+                    ticket: 0,
+                    character_name: String::default(),
+                    server_name: String::default(),
                 },
             ),
             (

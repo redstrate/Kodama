@@ -38,8 +38,8 @@ pub enum LobbyCharacterActionKind {
 #[derive(Clone, PartialEq, Debug, Default)]
 pub struct CharaMake {
     pub sequence: u64,
-    pub content_id: u64,
-    #[brw(pad_before = 8)]
+    pub content_id: u32,
+    pub person_type: u32, // wot
     pub character_index: u8,
     pub action: LobbyCharacterActionKind,
     pub world_id: u16,
@@ -48,8 +48,8 @@ pub struct CharaMake {
     #[br(map = read_string)]
     #[bw(map = write_string)]
     pub name: String,
-    #[bw(pad_size_to = 436)]
-    #[br(count = 436)]
+    #[bw(pad_size_to = 400)]
+    #[br(count = 400)]
     #[br(map = read_string)]
     #[bw(map = write_string)]
     pub json: String,

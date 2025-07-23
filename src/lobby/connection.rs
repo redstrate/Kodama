@@ -313,29 +313,6 @@ impl LobbyConnection {
 
                 if *free {
                     self.stored_character_creation_name = character_action.name.clone();
-
-                    let ipc = ServerLobbyIpcSegment {
-                        op_code: ServerLobbyIpcType::CharaMakeReply,
-                        data: ServerLobbyIpcData::CharaMakeReply {
-                            sequence: character_action.sequence + 1,
-                            unk1: 0x1,
-                            unk2: 0x1,
-                            action: LobbyCharacterActionKind::ReserveName,
-                            details: CharacterDetails {
-                                character_name: character_action.name.clone(),
-                                server_name: self.world_name.clone(),
-                                ..Default::default()
-                            },
-                        },
-                        ..Default::default()
-                    };
-
-                    self.send_segment(PacketSegment {
-                        segment_type: SegmentType::Ipc,
-                        data: SegmentData::Ipc { data: ipc },
-                        ..Default::default()
-                    })
-                    .await;
                 } else {
                     let ipc = ServerLobbyIpcSegment {
                         op_code: ServerLobbyIpcType::NackReply,
@@ -354,6 +331,8 @@ impl LobbyConnection {
                         ..Default::default()
                     };
                     self.send_segment(response_packet).await;
+
+                    return;
                 }
             }
             LobbyCharacterActionKind::Create => {
@@ -390,33 +369,6 @@ impl LobbyConnection {
                 tracing::info!(
                     "Got new player info from world server: {our_content_id} {our_actor_id}"
                 );
-
-                // a slightly different character created packet now
-                {
-                    let ipc = ServerLobbyIpcSegment {
-                        op_code: ServerLobbyIpcType::CharaMakeReply,
-                        data: ServerLobbyIpcData::CharaMakeReply {
-                            sequence: character_action.sequence + 1,
-                            unk1: 0x1,
-                            unk2: 0x1,
-                            action: LobbyCharacterActionKind::Create,
-                            details: CharacterDetails {
-                                player_id: our_actor_id as u64, // TODO: not correct
-                                character_name: character_action.name.clone(),
-                                server_name: self.world_name.clone(),
-                                ..Default::default()
-                            },
-                        },
-                        ..Default::default()
-                    };
-
-                    self.send_segment(PacketSegment {
-                        segment_type: SegmentType::Ipc,
-                        data: SegmentData::Ipc { data: ipc },
-                        ..Default::default()
-                    })
-                    .await;
-                }
             }
             LobbyCharacterActionKind::Rename => todo!(),
             LobbyCharacterActionKind::Delete => {
@@ -425,7 +377,7 @@ impl LobbyConnection {
                     let ipc_segment = CustomIpcSegment {
                         op_code: CustomIpcType::DeleteCharacter,
                         data: CustomIpcData::DeleteCharacter {
-                            content_id: character_action.content_id,
+                            content_id: character_action.content_id as u64,
                         },
                         ..Default::default()
                     };
@@ -433,33 +385,6 @@ impl LobbyConnection {
                     let _ = send_custom_world_packet(ipc_segment).await.unwrap();
 
                     // we intentionally don't care about the response right now, it's not expected to fail
-                }
-
-                // send a confirmation that the deletion was successful
-                {
-                    let ipc = ServerLobbyIpcSegment {
-                        op_code: ServerLobbyIpcType::CharaMakeReply,
-                        data: ServerLobbyIpcData::CharaMakeReply {
-                            sequence: character_action.sequence + 1,
-                            unk1: 0x1,
-                            unk2: 0x1,
-                            action: LobbyCharacterActionKind::Delete,
-                            details: CharacterDetails {
-                                player_id: 0, // TODO: fill maybe?
-                                character_name: character_action.name.clone(),
-                                server_name: self.world_name.clone(),
-                                ..Default::default()
-                            },
-                        },
-                        ..Default::default()
-                    };
-
-                    self.send_segment(PacketSegment {
-                        segment_type: SegmentType::Ipc,
-                        data: SegmentData::Ipc { data: ipc },
-                        ..Default::default()
-                    })
-                    .await;
                 }
             }
             LobbyCharacterActionKind::Move => todo!(),
@@ -470,6 +395,32 @@ impl LobbyConnection {
             LobbyCharacterActionKind::WorldVisit => todo!(),
             LobbyCharacterActionKind::DataCenterToken => todo!(),
             LobbyCharacterActionKind::Request => todo!(),
+        }
+
+        // a slightly different character created packet now
+        {
+            let ipc = ServerLobbyIpcSegment {
+                op_code: ServerLobbyIpcType::CharaMakeReply,
+                data: ServerLobbyIpcData::CharaMakeReply {
+                    sequence: character_action.sequence + 1,
+                    unk1: 0x1,
+                    unk2: 0x1,
+                    action: LobbyCharacterActionKind::Create,
+                    player_id: character_action.content_id as u64,
+                    unk3: 0x400017,
+                    ticket: 1,
+                    character_name: character_action.name.clone(),
+                    server_name: "Gilgamesh".to_string(),
+                },
+                ..Default::default()
+            };
+
+            self.send_segment(PacketSegment {
+                segment_type: SegmentType::Ipc,
+                data: SegmentData::Ipc { data: ipc },
+                ..Default::default()
+            })
+            .await;
         }
     }
 }

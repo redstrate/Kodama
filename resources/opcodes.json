@@ -20,7 +20,7 @@
         {
             "name": "CharaMakeReply",
             "opcode": 14,
-            "size": 1593
+            "size": 92
         },
         {
             "name": "GameLoginReply",
@@ -57,7 +57,7 @@
         {
             "name": "CharaMake",
             "opcode": 11,
-            "size": 496
+            "size": 452
         }
     ],
     "ServerChatIpcType": [
