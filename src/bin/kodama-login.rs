@@ -57,12 +57,6 @@ fn setup_default_environment() -> Environment<'static> {
             .expect("Failed to find template!"),
     )
     .unwrap();
-    env.add_template_owned(
-        "restore.html",
-        std::fs::read_to_string("resources/templates/restore.html")
-            .expect("Failed to find template!"),
-    )
-    .unwrap();
 
     env
 }
