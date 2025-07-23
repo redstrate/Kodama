@@ -1,9 +1,10 @@
 use kodama::RECEIVE_BUFFER_SIZE;
 use kodama::config::get_config;
+use kodama::ipc::kodama::{CustomIpcData, CustomIpcSegment, CustomIpcType};
 use kodama::ipc::lobby::ServiceAccount;
 use kodama::ipc::lobby::{ClientLobbyIpcData, ServerLobbyIpcSegment};
 use kodama::lobby::LobbyConnection;
-use kodama::packet::ConnectionType;
+use kodama::packet::{ConnectionType, send_custom_world_packet};
 use kodama::packet::{PacketState, SegmentData, send_keep_alive};
 use tokio::io::AsyncReadExt;
 use tokio::net::TcpListener;
@@ -125,6 +126,48 @@ async fn main() {
                                 ClientLobbyIpcData::CharaMake(chara_make) => {
                                     dbg!(chara_make);
                                     connection.handle_character_action(&chara_make).await;
+                                }
+                                ClientLobbyIpcData::GameLogin {
+                                    sequence,
+                                    content_id,
+                                    ..
+                                } => {
+                                    tracing::info!("Client is joining the world with {content_id}");
+
+                                    let our_actor_id;
+
+                                    // find the actor id for this content id
+                                    // NOTE: This is NOT the ideal solution. I theorize the lobby server has it's own records with this information.
+                                    {
+                                        let ipc_segment = CustomIpcSegment {
+                                            unk1: 0,
+                                            unk2: 0,
+                                            op_code: CustomIpcType::GetActorId,
+                                            option: 0,
+                                            timestamp: 0,
+                                            data: CustomIpcData::GetActorId {
+                                                content_id: *content_id as u64,
+                                            },
+                                        };
+
+                                        let response_segment =
+                                            send_custom_world_packet(ipc_segment).await.unwrap();
+
+                                        match &response_segment.data {
+                                            CustomIpcData::ActorIdFound { actor_id } => {
+                                                our_actor_id = *actor_id;
+                                            }
+                                            _ => panic!("Unexpected custom IPC packet type here!"),
+                                        }
+                                    }
+
+                                    connection
+                                        .send_enter_world(
+                                            *sequence,
+                                            *content_id as u64,
+                                            our_actor_id,
+                                        )
+                                        .await;
                                 }
                                 _ => {}
                             },

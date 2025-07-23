@@ -109,12 +109,10 @@ pub enum ClientLobbyIpcData {
     #[br(pre_assert(*magic == ClientLobbyIpcType::GameLogin))]
     GameLogin {
         sequence: u64,
-        content_id: u64,
+        content_id: u32,
         // TODO: what else is in here?
         unk1: u32,
-        unk2: u32,
-        unk3: u32,
-        unk4: u32,
+        ticket: u64,
     },
     /// Sent by the client after exchanging encryption information with the lobby server.
     #[br(pre_assert(*magic == ClientLobbyIpcType::LoginEx))]
@@ -313,9 +311,7 @@ mod tests {
                     sequence: 0,
                     content_id: 0,
                     unk1: 0,
-                    unk2: 0,
-                    unk3: 0,
-                    unk4: 0,
+                    ticket: 0,
                 },
             ),
             (

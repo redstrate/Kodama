@@ -47,7 +47,7 @@
         {
             "name": "GameLogin",
             "opcode": 4,
-            "size": 32
+            "size": 24
         },
         {
             "name": "LoginEx",
