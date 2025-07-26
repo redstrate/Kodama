@@ -5,7 +5,7 @@ pub use chara_make::{CharaMake, LobbyCharacterActionKind};
 
 mod service_login_reply;
 pub use service_login_reply::{
-    CharacterDetails, CharacterFlag, NeoClientSelectData, ServiceLoginReply,
+    CharacterDetails, CharacterFlag, FaceInfo, NeoClientSelectData, ServiceLoginReply,
 };
 
 mod server_list;
@@ -238,6 +238,7 @@ mod tests {
                 ServerLobbyIpcType::CharaMakeReply,
                 ServerLobbyIpcData::CharaMakeReply {
                     sequence: 0,
+                    content_id: 0,
                     unk1: 0,
                     unk2: 0,
                     action: LobbyCharacterActionKind::ReserveName,

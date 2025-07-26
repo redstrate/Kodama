@@ -44,3 +44,10 @@ pub struct CharaInfo {
     #[brw(pad_before = 0x10)]
     pub initial_town: u8,
 }
+
+#[cfg(not(target_family = "wasm"))]
+impl rusqlite::types::FromSql for CharaInfo {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        Ok(serde_json::from_str(&String::column_result(value)?).unwrap())
+    }
+}

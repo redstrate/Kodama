@@ -20,7 +20,7 @@
         {
             "name": "CharaMakeReply",
             "opcode": 14,
-            "size": 92
+            "size": 96
         },
         {
             "name": "GameLoginReply",

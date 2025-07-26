@@ -223,6 +223,8 @@ impl LobbyConnection {
                     ..Default::default()
                 };
 
+                dbg!(&ipc);
+
                 self.send_segment(PacketSegment {
                     segment_type: SegmentType::Ipc,
                     data: SegmentData::Ipc { data: ipc },

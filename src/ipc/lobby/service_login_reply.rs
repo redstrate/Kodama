@@ -1,5 +1,9 @@
-use binrw::binrw;
+use std::io::Cursor;
+
+use base64::{Engine as _, engine::general_purpose::URL_SAFE};
+use binrw::{BinRead, BinWrite, binrw};
 use bitflags::bitflags;
+use modular_bitfield::prelude::*;
 
 use crate::common::CHAR_NAME_MAX_LENGTH;
 
@@ -33,6 +37,24 @@ impl Default for CharacterFlag {
     }
 }
 
+#[bitfield]
+#[derive(Debug, Clone, Copy, Default, BinRead, BinWrite)]
+#[br(map = Self::from_bytes)]
+#[bw(map = |&x| Self::into_bytes(x))]
+pub struct FaceInfo {
+    pub characteristics: B5,
+    pub characteristics_color: B3,
+    pub face_type: B6,
+    pub ears: B2,
+    pub mouth: B2,
+    pub features: B2,
+    pub nose: B3,
+    pub eye_shape: B3,
+    pub iris_size: B1,
+    pub eyebrows: B3,
+    pub unknown: B2,
+}
+
 #[binrw]
 #[derive(Debug, Clone, Default)]
 pub struct NeoClientSelectData {
@@ -49,7 +71,7 @@ pub struct NeoClientSelectData {
     pub model: u32,
     pub height: u32,
     pub colors: u32,
-    pub face: u32,
+    pub face: FaceInfo,
     pub hair: u32,
     pub voice: u32,
     pub main_hand: u32,
@@ -62,7 +84,7 @@ pub struct NeoClientSelectData {
     pub current_class: u8,
     pub current_level: u16,
     pub current_job: u8,
-    pub unk7: u32,
+    pub unk7: u16,
     pub tribe: u8,
     pub unk8: u32,
     #[bw(calc = location1.len() as u32 + 1)]
@@ -88,10 +110,20 @@ pub struct NeoClientSelectData {
     pub city_state_again: u32,
 }
 
+impl NeoClientSelectData {
+    pub fn to_string(&self) -> String {
+        let mut cursor = Cursor::new(Vec::new());
+        self.write_le(&mut cursor).unwrap();
+        let bytes = cursor.into_inner();
+        URL_SAFE.encode(&bytes)
+    }
+}
+
 #[binrw]
 #[derive(Debug, Clone, Default)]
 pub struct CharacterDetails {
-    pub player_id: u64,
+    pub unk2: u32,
+    pub player_id: u32,
     pub index: u8,
     pub flags: CharacterFlag,
     pub unk1: u16,
@@ -106,7 +138,11 @@ pub struct CharacterDetails {
     #[br(map = read_string)]
     #[bw(map = write_string)]
     pub server_name: String,
-    pub client_select_data: NeoClientSelectData,
+    #[bw(pad_size_to = 402)]
+    #[br(count = 402)]
+    #[br(map = read_string)]
+    #[bw(map = write_string)]
+    pub client_select_data: String,
 }
 
 impl CharacterDetails {
