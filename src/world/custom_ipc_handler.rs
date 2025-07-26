@@ -1,25 +1,40 @@
+use std::io::Cursor;
+
 use crate::{
+    common::CharaInfo,
     config::get_config,
     ipc::kodama::{CustomIpcData, CustomIpcSegment, CustomIpcType},
     packet::{
         CompressionType, ConnectionType, PacketSegment, SegmentData, SegmentType, send_packet,
     },
 };
+use base64::{Engine as _, engine::general_purpose::URL_SAFE};
+use binrw::BinRead;
 
 use super::ZoneConnection;
 
 pub async fn handle_custom_ipc(connection: &mut ZoneConnection, data: &CustomIpcSegment) {
     match &data.data {
         CustomIpcData::RequestCreateCharacter {
+            service_account_id,
             name,
-            chara_make_json,
+            encoded,
             ..
         } => {
-            tracing::info!("creating character from: {name} {chara_make_json}");
+            tracing::info!("creating character from: {name} {encoded}");
 
-            // TODO: insert into database
-            let content_id = 0;
-            let actor_id = 0;
+            let mut cursor = Cursor::new(URL_SAFE.decode(encoded).unwrap());
+            let chara_info = CharaInfo::read_le(&mut cursor).unwrap();
+
+            dbg!(&chara_info);
+
+            let (content_id, actor_id) = connection.database.create_player_data(
+                *service_account_id,
+                &name,
+                &serde_json::to_string(&chara_info).unwrap(),
+                chara_info.initial_town,
+                0,
+            );
 
             tracing::info!("Created new player: {content_id} {actor_id}");
 

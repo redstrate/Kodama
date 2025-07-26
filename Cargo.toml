@@ -58,6 +58,8 @@ physis = { git = "https://github.com/redstrate/physis", default-features = false
 # needed for c-style bitflags
 bitflags = { version = "2.9", default-features = false }
 
+base64 = "0.22"
+
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 # Used for the web servers
 axum = { version = "0.8", features = ["json", "tokio", "http1", "form", "query", "multipart"], default-features = false }

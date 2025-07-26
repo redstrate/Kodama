@@ -34,8 +34,6 @@ pub async fn send_packet<T: ReadWriteIpcSegment>(
         compressed_or_encoded: 0,
     };
 
-    dbg!(&header);
-
     let mut cursor = Cursor::new(Vec::new());
     header.write_le(&mut cursor).unwrap();
     std::io::Write::write_all(&mut cursor, &data).unwrap();

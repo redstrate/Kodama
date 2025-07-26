@@ -8,6 +8,9 @@ use binrw::binrw;
 mod position;
 pub use position::Position;
 
+mod chara_info;
+pub use chara_info::CharaInfo;
+
 #[binrw]
 #[brw(little)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

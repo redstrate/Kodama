@@ -52,5 +52,5 @@ pub struct CharaMake {
     #[br(count = 400)]
     #[br(map = read_string)]
     #[bw(map = write_string)]
-    pub json: String,
+    pub encoded: String,
 }

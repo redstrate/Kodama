@@ -159,9 +159,11 @@ pub enum ServerLobbyIpcData {
         sequence: u64,
         unk1: u8,
         unk2: u8,
-        #[brw(pad_after = 1)] // empty
+        #[brw(pad_after = 4)] // empty
+        #[brw(pad_size_to = 2)]
         action: LobbyCharacterActionKind,
-        player_id: u64,
+        player_id: u32,
+        content_id: u32,
         unk3: u32,
         ticket: u32,
         #[bw(pad_size_to = CHAR_NAME_MAX_LENGTH)]

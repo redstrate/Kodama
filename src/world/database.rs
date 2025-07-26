@@ -42,17 +42,11 @@ impl WorldDatabase {
                 chara_make STRING,
                 city_state INTEGER,
                 zone_id INTEGER,
+                classjob_id INTEGER,
                 pos_x REAL,
                 pos_y REAL,
                 pos_z REAL,
-                rotation REAL,
-                inventory STRING,
-                remake_mode INTEGER,
-                gm_rank INTEGER,
-                classjob_id INTEGER,
-                classjob_levels STRING,
-                classjob_exp STRING,
-                unlocks STRING);";
+                rotation REAL);";
             connection.execute(query, ()).unwrap();
         }
 
@@ -203,14 +197,8 @@ impl WorldDatabase {
         // insert char data
         connection
             .execute(
-                "INSERT INTO character_data VALUES (?1, ?2, ?3, ?4, ?5, 0.0, 0.0, 0.0, 0.0, ?6, 0, 90, ?7, ?8, ?9, ?10);",
-                (
-                    content_id,
-                    name,
-                    chara_make_str,
-                    city_state,
-                    zone_id,
-                ),
+                "INSERT INTO character_data VALUES (?1, ?2, ?3, ?4, ?5, 0, 0.0, 0.0, 0.0, 0.0);",
+                (content_id, name, chara_make_str, city_state, zone_id),
             )
             .unwrap();
 

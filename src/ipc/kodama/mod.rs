@@ -99,7 +99,7 @@ pub enum CustomIpcData {
         #[br(count = 1024)]
         #[br(map = read_string)]
         #[bw(map = write_string)]
-        chara_make_json: String,
+        encoded: String,
     },
     #[br(pre_assert(*magic == CustomIpcType::CharacterCreated))]
     CharacterCreated { actor_id: u32, content_id: u64 },
@@ -141,7 +141,7 @@ impl Default for CustomIpcData {
     fn default() -> CustomIpcData {
         CustomIpcData::RequestCreateCharacter {
             service_account_id: 0,
-            chara_make_json: String::new(),
+            encoded: String::new(),
             name: String::new(),
         }
     }

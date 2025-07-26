@@ -286,6 +286,9 @@ impl LobbyConnection {
     }
 
     pub async fn handle_character_action(&mut self, character_action: &CharaMake) {
+        let mut player_id = character_action.person_type;
+        let mut content_id = character_action.content_id;
+
         match &character_action.action {
             LobbyCharacterActionKind::ReserveName => {
                 tracing::info!(
@@ -348,7 +351,7 @@ impl LobbyConnection {
                         data: CustomIpcData::RequestCreateCharacter {
                             service_account_id: self.selected_service_account.unwrap(),
                             name: self.stored_character_creation_name.clone(), // TODO: worth double-checking, but AFAIK we have to store it this way?
-                            chara_make_json: character_action.json.clone(),
+                            encoded: character_action.encoded.clone(),
                         },
                         ..Default::default()
                     };
@@ -369,6 +372,9 @@ impl LobbyConnection {
                 tracing::info!(
                     "Got new player info from world server: {our_content_id} {our_actor_id}"
                 );
+
+                player_id = our_actor_id as u32;
+                content_id = our_content_id as u32;
             }
             LobbyCharacterActionKind::Rename => todo!(),
             LobbyCharacterActionKind::Delete => {
@@ -406,7 +412,8 @@ impl LobbyConnection {
                     unk1: 0x1,
                     unk2: 0x1,
                     action: LobbyCharacterActionKind::Create,
-                    player_id: character_action.content_id as u64,
+                    player_id,
+                    content_id,
                     unk3: 0x400017,
                     ticket: 1,
                     character_name: character_action.name.clone(),

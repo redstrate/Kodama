@@ -23,7 +23,6 @@ pub(crate) fn decrypt<T: ReadWriteIpcSegment>(
     size: u32,
     encryption_key: Option<&[u8]>,
 ) -> BinResult<T> {
-    dbg!(encryption_key);
     if let Some(encryption_key) = encryption_key {
         let size = size - IPC_HEADER_SIZE;
 
